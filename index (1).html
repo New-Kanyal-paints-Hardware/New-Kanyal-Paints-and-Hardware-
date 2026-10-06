@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>New Kanyal Paints And Hardware – Admin</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--on:#fff;--bg:#eef5fb;--card:#fff;--tx:#0f2236;--mu:#5b7188;--bd:#d6e3ef;--pr:#0369a1;--ok:#15803d;--bad:#b91c1c}
+:root[data-theme="forest"]{--bg:#f0f6f1;--card:#fff;--tx:#14261a;--mu:#5f7566;--bd:#d5e4d9;--pr:#166534}
+:root[data-theme="midnight"]{--on:#1a1200;--bg:#0e1116;--card:#171b22;--tx:#eef0f3;--mu:#9aa1ad;--bd:#272c36;--pr:#fbbf24;--ok:#4ade80;--bad:#f87171}
+:root[data-theme="sunset"]{--bg:#fbf4ee;--card:#fff;--tx:#2a1a10;--mu:#7a6555;--bd:#ecdccd;--pr:#c2410c}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:var(--pr);color:var(--on);padding:14px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+header h1{margin:0;font-size:18px}header .hb{display:flex;gap:6px}header button,header select{background:rgba(128,128,128,.28);color:inherit;border:0;padding:6px 8px;border-radius:8px;width:auto;font:inherit;font-size:13px}header option{color:#000}
+nav{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid var(--bd);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+nav button{flex:1;min-width:max-content;padding:12px 14px;border:0;background:none;color:var(--mu);font-weight:600;border-bottom:3px solid transparent}
+nav button.on{color:var(--pr);border-color:var(--pr)}
+main{max-width:900px;margin:0 auto;padding:14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.stat small{color:var(--mu);display:block}.stat b{font-size:22px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+h2{font-size:17px;margin:0}h3{margin:14px 0 8px;font-size:15px}
+.btn{background:var(--pr);color:var(--on);border:0;border-radius:8px;padding:9px 14px;font-weight:600}
+.btn.g{background:var(--card);color:var(--tx);border:1px solid var(--bd)}.btn.s{padding:5px 9px;font-size:13px}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mu{color:var(--mu);font-size:13px}
+.item{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px}
+.item .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start}
+.tag{font-size:12px;padding:2px 8px;border-radius:99px;font-weight:600}
+.tag.p{background:#fee2e2;color:#991b1b}.tag.r{background:#dcfce7;color:#166534}
+.tw{overflow-x:auto}table{width:100%;border-collapse:collapse}th,td{padding:8px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:20}
+.modal.show{display:flex}.sheet{background:var(--card);width:100%;max-width:520px;max-height:90%;overflow:auto;border-radius:16px 16px 0 0;padding:16px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--bd);border-radius:8px;background:var(--bg);color:var(--tx);font:inherit}
+.empty{text-align:center;color:var(--mu);padding:18px}
+body:not(.in) header,body:not(.in) nav,body:not(.in) main{display:none}body.in #login{display:none}#login{max-width:380px;margin:12vh auto;padding:16px}#login h2{text-align:center;margin-bottom:4px}#err{color:var(--bad);font-size:13px;min-height:18px;margin:8px 0}
+@media print{header,nav,.noprint{display:none!important}}
+</style></head><body>
+<header><h1 id="biz"></h1><div class="hb"><select id="th" onchange="setTheme(this.value)"><option value="ocean">🌊 Ocean</option><option value="forest">🌿 Forest</option><option value="midnight">🌙 Midnight</option><option value="sunset">🌅 Sunset</option></select><button onclick="rename()">✎ Name</button><button onclick="logout()">Logout</button></div></header>
+<nav id="nav"></nav>
+<main id="main"></main>
+<div id="login"><div class="card"><h2 id="lt"></h2><p class="mu" style="text-align:center;margin:0 0 6px">Admin login</p>
+<label>Email</label><input id="em" type="email" autocomplete="username"><label>Password</label><input id="pw" type="password" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+<div id="err"></div><button class="btn" style="width:100%" onclick="doLogin()">Sign in</button><p style="text-align:center;margin:12px 0 0"><a href="#" onclick="forgot();return false" class="mu">Forgot password?</a></p></div></div>
+<div class="modal" id="modal"><div class="sheet" id="sheet"></div></div>
+<script>
+const KEY='kanyal_admin_v1';
+let S={name:'New Kanyal Paints And Hardware',sales:[],pays:[],exps:[]};
+try{const r=localStorage.getItem(KEY);if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+function setTheme(t){document.documentElement.dataset.theme=t;document.getElementById('th').value=t;try{localStorage.setItem('kanyal_theme',t)}catch(e){}}
+const save=()=>{window.onSave&&window.onSave()};
+const today=()=>{const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+const money=n=>'₹'+(Number(n)||0).toLocaleString('en-IN');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const sum=a=>a.reduce((t,x)=>t+(Number(x.amt)||0),0);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fd=d=>d?new Date(d+'T00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'';
+const SCH={
+ sales:{t:'Daily Sales',f:[['date','Date','date'],['amt','Total sales for the day (₹)','number'],['note','Note (optional)','text']]},
+ exps:{t:'Expense',f:[['date','Date','date'],['desc','Expense (e.g. transport to customer)','text'],['amt','Amount (₹)','number']]},
+ pays:{t:'Pending Payment',f:[['cust','Customer name','text'],['addr','Address','textarea'],['phone','Phone (optional)','text'],['amt','Total amount due (₹)','number'],['date','Date of purchase','date'],['prod','Products purchased','textarea'],['status','Status','select'],['rdate','Date received (if paid)','date']]}
+};
+let tab='Dashboard',rf='',rt='';
+const TABS=['Dashboard','Sales','Payments','Expenses','Reports'];
+function go(t){tab=t;draw()}
+function draw(){
+ document.getElementById('biz').textContent=S.name;
+ document.getElementById('nav').innerHTML=TABS.map(t=>`<button class="${t==tab?'on':''}" onclick="go('${t}')">${t}</button>`).join('');
+ document.getElementById('main').innerHTML=({Dashboard,Sales,Payments,Expenses,Reports})[tab]();
+}
+function rename(){const n=prompt('Business name',S.name);if(n){S.name=n;save();draw()}}
+function openForm(type,id){
+ const sc=SCH[type],it=id?S[type].find(x=>x.id==id):{date:today(),status:'pending'};
+ document.getElementById('sheet').innerHTML=`<h2>${id?'Edit':'Add'} ${sc.t}</h2>`+sc.f.map(([k,l,ty])=>{
+  const v=esc(it[k]??'');
+  const inp=ty=='textarea'?`<textarea id="f_${k}" rows="2">${v}</textarea>`:ty=='select'?`<select id="f_${k}"><option value="pending" ${it[k]!='received'?'selected':''}>Pending</option><option value="received" ${it[k]=='received'?'selected':''}>Received</option></select>`:`<input id="f_${k}" type="${ty}" value="${v}" ${ty=='number'?'inputmode="decimal" min="0"':''}>`;
+  return `<label>${l}</label>${inp}`}).join('')+
+ `<div class="row" style="margin-top:16px"><button class="btn g" onclick="closeM()">Cancel</button><button class="btn" onclick="submitForm('${type}','${id||''}')">Save</button></div>`;
+ document.getElementById('modal').classList.add('show');
+}
+function closeM(){document.getElementById('modal').classList.remove('show')}
+function submitForm(type,id){
+ const o={};SCH[type].f.forEach(([k,,ty])=>{const v=document.getElementById('f_'+k).value;o[k]=ty=='number'?parseFloat(v)||0:v.trim()});
+ if(type=='pays'){if(!o.cust)return alert('Enter customer name');if(o.status=='received'&&!o.rdate)o.rdate=today()}
+ else if(!o.amt)return alert('Enter an amount');
+ if(!o.date)o.date=today();
+ if(id){Object.assign(S[type].find(x=>x.id==id),o)}else S[type].push(Object.assign({id:uid()},o));
+ save();closeM();draw();
+}
+function del(type,id){if(confirm('Delete this entry?')){S[type]=S[type].filter(x=>x.id!=id);save();draw()}}
+function recv(id){const p=S.pays.find(x=>x.id==id);p.status='received';p.rdate=today();save();draw()}
+function unrecv(id){const p=S.pays.find(x=>x.id==id);p.status='pending';p.rdate='';save();draw()}
+const byDate=a=>[...a].sort((x,y)=>(y.date||'').localeCompare(x.date||''));
+function Dashboard(){
+ const t=today(),m=t.slice(0,7),pend=S.pays.filter(p=>p.status!='received');
+ const ts=sum(S.sales.filter(s=>s.date==t)),te=sum(S.exps.filter(s=>s.date==t));
+ return `<div class="grid">
+ <div class="card stat"><small>Today's Sales</small><b class="ok">${money(ts)}</b></div>
+ <div class="card stat"><small>Today's Expenses</small><b class="bad">${money(te)}</b></div>
+ <div class="card stat"><small>Pending Payments</small><b class="bad">${money(sum(pend))}</b><small>${pend.length} customer(s)</small></div>
+ <div class="card stat"><small>This Month Sales</small><b>${money(sum(S.sales.filter(s=>s.date.startsWith(m))))}</b></div></div>
+ <div class="row"><button class="btn" onclick="openForm('sales')">+ Today's Sales</button><button class="btn g" onclick="openForm('pays')">+ Pending</button><button class="btn g" onclick="openForm('exps')">+ Expense</button></div>
+ <h3>Oldest pending payments</h3>${pend.length?[...pend].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,5).map(payItem).join(''):'<div class="card empty">No pending payments 🎉</div>'}`;
+}
+function Sales(){
+ const l=byDate(S.sales);
+ return `<div class="row"><h2>Daily Sales</h2><button class="btn" onclick="openForm('sales')">+ Add</button></div>`+
+ (l.length?l.map(s=>`<div class="card item"><div><b>${fd(s.date)}</b><div class="mu">${esc(s.note)}</div></div><div class="acts"><b class="ok">${money(s.amt)}</b><button class="btn g s" onclick="openForm('sales','${s.id}')">Edit</button><button class="btn g s" onclick="del('sales','${s.id}')">✕</button></div></div>`).join(''):'<div class="card empty">No sales entered yet</div>');
+}
+function payItem(p){
+ const r=p.status=='received';
+ return `<div class="card item"><div><b>${esc(p.cust)}</b> <span class="tag ${r?'r':'p'}">${r?'Received':'Pending'}</span>
+ <div class="mu">${esc(p.addr)}${p.phone?' · '+esc(p.phone):''}</div><div class="mu">Purchased: ${fd(p.date)}${r&&p.rdate?' · Paid: '+fd(p.rdate):''}</div><div class="mu">${esc(p.prod)}</div></div>
+ <div class="acts" style="flex-direction:column;align-items:flex-end"><b class="${r?'ok':'bad'}">${money(p.amt)}</b>
+ <div class="acts">${r?`<button class="btn g s" onclick="unrecv('${p.id}')">Undo</button>`:`<button class="btn s" onclick="recv('${p.id}')">Mark received</button>`}<button class="btn g s" onclick="openForm('pays','${p.id}')">Edit</button><button class="btn g s" onclick="del('pays','${p.id}')">✕</button></div></div></div>`;
+}
+function Payments(){
+ const pend=byDate(S.pays.filter(p=>p.status!='received')),done=byDate(S.pays.filter(p=>p.status=='received'));
+ return `<div class="row"><h2>Payments</h2><button class="btn" onclick="openForm('pays')">+ Add</button></div>
+ <div class="card stat" style="margin-bottom:10px"><small>Total pending</small><b class="bad">${money(sum(pend))}</b></div>
+ <h3>Pending (${pend.length})</h3>${pend.map(payItem).join('')||'<div class="card empty">Nothing pending</div>'}
+ <h3>Received (${done.length})</h3>${done.map(payItem).join('')||'<div class="card empty">None yet</div>'}`;
+}
+function Expenses(){
+ const l=byDate(S.exps);
+ return `<div class="row"><h2>Expenses</h2><button class="btn" onclick="openForm('exps')">+ Add</button></div>`+
+ (l.length?l.map(s=>`<div class="card item"><div><b>${esc(s.desc)||'Expense'}</b><div class="mu">${fd(s.date)}</div></div><div class="acts"><b class="bad">${money(s.amt)}</b><button class="btn g s" onclick="openForm('exps','${s.id}')">Edit</button><button class="btn g s" onclick="del('exps','${s.id}')">✕</button></div></div>`).join(''):'<div class="card empty">No expenses yet</div>');
+}
+function Reports(){
+ const t=today();if(!rf)rf=t.slice(0,8)+'01';if(!rt)rt=t;
+ const inR=d=>d>=rf&&d<=rt;
+ const sa=S.sales.filter(x=>inR(x.date)),ex=S.exps.filter(x=>inR(x.date));
+ const rc=S.pays.filter(p=>p.status=='received'&&p.rdate&&inR(p.rdate)),pe=S.pays.filter(p=>p.status!='received');
+ const days={};
+ sa.forEach(x=>(days[x.date]=days[x.date]||{s:0,e:0}).s+=+x.amt||0);
+ ex.forEach(x=>(days[x.date]=days[x.date]||{s:0,e:0}).e+=+x.amt||0);
+ const ds=Object.keys(days).sort().reverse();
+ return `<div class="row noprint"><h2>Report</h2><button class="btn g" onclick="window.print()">Print</button></div>
+ <div class="card noprint" style="margin-bottom:10px"><div class="row" style="margin:0"><div style="flex:1"><label style="margin-top:0">From</label><input type="date" value="${rf}" onchange="rf=this.value;draw()"></div><div style="flex:1"><label style="margin-top:0">To</label><input type="date" value="${rt}" onchange="rt=this.value;draw()"></div></div></div>
+ <div class="grid">
+ <div class="card stat"><small>Total Sales</small><b class="ok">${money(sum(sa))}</b></div>
+ <div class="card stat"><small>Total Expenses</small><b class="bad">${money(sum(ex))}</b></div>
+ <div class="card stat"><small>Sales − Expenses</small><b class="${sum(sa)-sum(ex)>=0?'ok':'bad'}">${money(sum(sa)-sum(ex))}</b></div>
+ <div class="card stat"><small>Pending payments received</small><b>${money(sum(rc))}</b></div>
+ <div class="card stat"><small>Still pending (all time)</small><b class="bad">${money(sum(pe))}</b></div></div>
+ <h3>Day by day</h3><div class="card tw"><table><tr><th>Date</th><th>Sales</th><th>Expenses</th><th>Net</th></tr>
+ ${ds.map(d=>`<tr><td>${fd(d)}</td><td>${money(days[d].s)}</td><td>${money(days[d].e)}</td><td>${money(days[d].s-days[d].e)}</td></tr>`).join('')||'<tr><td colspan="4" class="mu">No data in this range</td></tr>'}</table></div>
+ <h3 class="noprint">Backup</h3><div class="row noprint"><button class="btn g" onclick="backup()">Download backup</button><button class="btn g" onclick="restore()">Restore backup</button></div>
+ <p class="mu noprint">Data is saved in this browser. Download a backup regularly.</p>`;
+}
+async function backup(){
+ const data=JSON.stringify(S,null,2),fn='kanyal-backup-'+today()+'.json';
+ try{const d=await claude.use('downloads');if(d){await d.save({filename:fn,data});return}}catch(e){}
+ const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));a.download=fn;a.click();
+}
+function restore(){
+ const i=document.createElement('input');i.type='file';i.accept='.json';
+ i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const o=JSON.parse(r.result);if(!o.sales||!o.pays||!o.exps)throw 0;S=o;save();draw()}catch(e){alert('Invalid backup file')}};r.readAsText(f)};i.click();
+}
+let _t='ocean';try{_t=localStorage.getItem('kanyal_theme')||'ocean'}catch(e){}
+setTheme(_t);draw();
+</script><script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,signOut,sendPasswordResetEmail} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,onSnapshot,setDoc} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+// ====== PASTE YOUR FIREBASE CONFIG HERE (Firebase console → Project settings → Your apps) ======
+const firebaseConfig={
+  apiKey:"AIzaSyD4aLiTJpvoNmZrI21lfRB4VBqdZFaI4co",
+  authDomain:"new-kanyal-paints.firebaseapp.com",
+  projectId:"new-kanyal-paints",
+  storageBucket:"new-kanyal-paints.firebasestorage.app",
+  messagingSenderId:"686492298266",
+  appId:"1:686492298266:web:ea4ac38198b645603ff5a3"
+};
+// ================================================================================================
+
+const $=id=>document.getElementById(id);
+$('lt').textContent=S.name;
+if(firebaseConfig.apiKey.startsWith('PASTE')){
+  $('err').textContent='Firebase is not set up yet. Paste your config in index.html (see README).';
+}else{
+  const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+  let unsub=null,ref=null,loaded=false,timer=null;
+  const msg=c=>({'auth/invalid-credential':'Wrong email or password','auth/invalid-email':'Enter a valid email','auth/too-many-requests':'Too many attempts. Try again later','auth/network-request-failed':'No internet connection'}[c]||'Could not sign in ('+c+')');
+  window.doLogin=async()=>{$('err').textContent='';try{await signInWithEmailAndPassword(auth,$('em').value.trim(),$('pw').value)}catch(e){$('err').textContent=msg(e.code)}};
+  window.forgot=async()=>{const e=$('em').value.trim();if(!e){$('err').textContent='Type your email first';return}try{await sendPasswordResetEmail(auth,e);$('err').style.color='var(--ok)';$('err').textContent='Password reset email sent'}catch(x){$('err').textContent=msg(x.code)}};
+  window.logout=async()=>{await signOut(auth);try{localStorage.removeItem(KEY)}catch(e){}location.reload()};
+  window.onSave=()=>{if(!loaded||!ref)return;clearTimeout(timer);timer=setTimeout(()=>setDoc(ref,JSON.parse(JSON.stringify(S))).catch(e=>alert('Could not save: '+e.code+'. Check your internet and Firestore rules.')),300)};
+  onAuthStateChanged(auth,user=>{
+    document.body.classList.toggle('in',!!user);
+    if(unsub){unsub();unsub=null}
+    loaded=false;
+    if(!user)return;
+    ref=doc(db,'business','main');
+    unsub=onSnapshot(ref,snap=>{
+      if(snap.metadata.hasPendingWrites)return;
+      if(!snap.exists()){ // first login: upload any data from the old browser-only version
+        loaded=true;setDoc(ref,JSON.parse(JSON.stringify(S)));try{localStorage.removeItem(KEY)}catch(e){}return;
+      }
+      S=Object.assign({name:S.name,sales:[],pays:[],exps:[]},snap.data());loaded=true;draw();
+    },e=>alert('Cannot read data: '+e.code+'. Check Firestore rules (see README).'));
+  });
+}
+</script>
+</body></html>
